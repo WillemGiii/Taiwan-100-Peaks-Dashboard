@@ -66,22 +66,34 @@ async function fetchMountains(apiBaseUrl) {
 
 function addMountainMarkers(map, mountains, onMountainSelected) {
   mountainMarkerLayer.clearLayers();
+  let markerCount = 0;
 
   mountains.forEach((mountain) => {
     if (mountain.latitude === null || mountain.longitude === null) {
       return;
     }
 
-    const marker = L.marker([mountain.latitude, mountain.longitude])
-      .bindPopup(createPopupContent(mountain))
-      .on("click", () => onMountainSelected(mountain));
+    try {
+      const marker = L.marker([mountain.latitude, mountain.longitude])
+        .bindPopup(createPopupContent(mountain))
+        .on("click", () => onMountainSelected(mountain));
 
-    marker.addTo(mountainMarkerLayer);
+      marker.addTo(mountainMarkerLayer);
+      markerCount += 1;
+    } catch (error) {
+      console.warn("Mountain marker render skipped:", mountain, error);
+    }
   });
 
   if (mountainMarkerLayer.getLayers().length > 0) {
-    map.fitBounds(mountainMarkerLayer.getBounds(), { padding: [24, 24] });
+    try {
+      map.fitBounds(mountainMarkerLayer.getBounds(), { padding: [24, 24] });
+    } catch (error) {
+      console.warn("Map bounds update skipped:", error);
+    }
   }
+
+  return markerCount;
 }
 
 async function initTaiwanMap({ mapElementId, apiBaseUrl, onMountainSelected }) {
@@ -96,13 +108,21 @@ async function initTaiwanMap({ mapElementId, apiBaseUrl, onMountainSelected }) {
 
   mountainMarkerLayer = L.layerGroup().addTo(map);
 
+  let mountains = [];
   try {
-    const mountains = await fetchMountains(apiBaseUrl);
-    addMountainMarkers(map, mountains, onMountainSelected);
-    updateMapStatus(`已從 API 載入 ${mountains.length} 條百岳路線。`);
+    mountains = await fetchMountains(apiBaseUrl);
   } catch (error) {
     console.error(error);
     updateMapStatus("山岳資料載入失敗，請確認 backend API 是否已啟動。", true);
+    return;
   }
+
+  const markerCount = addMountainMarkers(map, mountains, onMountainSelected);
+  if (markerCount === 0) {
+    updateMapStatus("已從 API 載入山岳資料，但沒有可顯示座標的路線。", true);
+    return;
+  }
+
+  updateMapStatus(`已從 API 載入 ${markerCount} 條百岳路線。`);
 }
 

@@ -120,7 +120,6 @@ function createPopupContent(route) {
         <dt class="popup-label">行政區</dt>
         <dd>${route.country}</dd>
       </div>
-    </dl>
   `;
 }
 
@@ -132,11 +131,12 @@ function initTaiwanMap(elementId) {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
-  mountainRoutes.forEach((route) => {
-    L.marker([route.latitude, route.longitude])
-      .addTo(map)
-      .bindPopup(createPopupContent(route));
-  });
+  mountainRoutes
+    .forEach((route) => {
+      L.marker([route.latitude, route.longitude])
+        .addTo(map)
+        .bindPopup(createPopupContent(route));
+    });
 
   const statusElement = document.getElementById("map-status");
   if (statusElement) {

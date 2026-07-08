@@ -13,6 +13,16 @@ function formatMeters(value) {
   return value === null || value === undefined ? "-" : `${value} m`;
 }
 
+function updateMapStatus(message, isError = false) {
+  const statusElement = document.getElementById("map-status");
+  if (!statusElement) {
+    return;
+  }
+
+  statusElement.textContent = message;
+  statusElement.classList.toggle("status-error", isError);
+}
+
 function createPopupContent(mountain) {
   return `
     <h3 class="popup-title">${escapeHtml(mountain.ch_mt_name)}</h3>
@@ -75,7 +85,8 @@ function addMountainMarkers(map, mountains, onMountainSelected) {
 }
 
 async function initTaiwanMap({ mapElementId, apiBaseUrl, onMountainSelected }) {
-  const statusElement = document.getElementById("map-status");
+  updateMapStatus("載入臺灣地圖與山岳標記中...");
+
   const map = L.map(mapElementId).setView([23.75, 121.05], 8);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -88,17 +99,10 @@ async function initTaiwanMap({ mapElementId, apiBaseUrl, onMountainSelected }) {
   try {
     const mountains = await fetchMountains(apiBaseUrl);
     addMountainMarkers(map, mountains, onMountainSelected);
-
-    if (statusElement) {
-      statusElement.textContent = `已從 API 載入 ${mountains.length} 條百岳路線。`;
-    }
+    updateMapStatus(`已從 API 載入 ${mountains.length} 條百岳路線。`);
   } catch (error) {
     console.error(error);
-    if (statusElement) {
-      statusElement.textContent =
-        "山岳資料載入失敗，請確認 backend API 是否已啟動。";
-      statusElement.classList.add("status-error");
-    }
+    updateMapStatus("山岳資料載入失敗，請確認 backend API 是否已啟動。", true);
   }
 }
 

@@ -1,0 +1,12 @@
+.git
+.venv
+**/.venv
+.uv-cache
+**/.uv-cache
+__pycache__
+**/__pycache__
+*.pyc
+.env
+node_modules
+dist
+

@@ -33,8 +33,15 @@ ON CONFLICT (hiking_note_id) DO UPDATE SET
     elevation_diff_m = EXCLUDED.elevation_diff_m,
     country_raw = EXCLUDED.country_raw;
 
+DELETE FROM hiking_records
+WHERE trail_name = 'hehuan_north'
+  AND distance_km = 14.69
+  AND ascent_m = 1380
+  AND descent_m = 1380
+  AND duration_minutes = 592
+  AND record_date = DATE '2025-10-11';
+
 INSERT INTO hiking_records (
-    id,
     trail_name,
     distance_km,
     ascent_m,
@@ -42,13 +49,5 @@ INSERT INTO hiking_records (
     duration_minutes,
     record_date
 ) VALUES
-    (1, 'hehuan_north', 14.69, 1380, 1380, 592, DATE '2025-10-11')
-ON CONFLICT (id) DO UPDATE SET
-    trail_name = EXCLUDED.trail_name,
-    distance_km = EXCLUDED.distance_km,
-    ascent_m = EXCLUDED.ascent_m,
-    descent_m = EXCLUDED.descent_m,
-    duration_minutes = EXCLUDED.duration_minutes,
-    record_date = EXCLUDED.record_date,
-    updated_at = CURRENT_TIMESTAMP;
+    ('hehuan_north', 14.69, 1380, 1380, 592, DATE '2025-10-11');
 

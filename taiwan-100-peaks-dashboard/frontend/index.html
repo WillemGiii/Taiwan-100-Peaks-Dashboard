@@ -16,7 +16,7 @@
         <p class="eyebrow">Taiwan 100 Peaks One-Day Hike Dashboard</p>
         <h1>臺灣百岳單攻地圖</h1>
         <p class="intro">
-          以靜態 seed data 標示可單攻百岳路線，點擊 Marker 可查看路線長度、海拔與行政區資訊。
+          透過 FastAPI 與 PostgreSQL 載入百岳路線資料，點擊 Marker 可查看登山紀錄統計。
         </p>
       </header>
 
@@ -28,15 +28,40 @@
         <div id="map" aria-label="臺灣百岳單攻路線地圖"></div>
       </section>
 
-      <section class="info-section" aria-labelledby="info-title">
-        <h2 id="info-title">目前範圍</h2>
-        <p>
-          本頁僅建置前端靜態地圖原型，尚未串接 API、資料庫或儀表板。
-        </p>
+      <section class="dashboard-section" aria-labelledby="dashboard-title">
+        <div class="section-heading">
+          <h2 id="dashboard-title">山岳統計儀表板</h2>
+          <p id="dashboard-status">請點擊地圖上的山岳 Marker。</p>
+        </div>
+
+        <div class="dashboard-summary">
+          <div class="summary-item">
+            <span class="summary-label">山岳</span>
+            <strong id="dashboard-mountain-name">尚未選擇</strong>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">路線</span>
+            <strong id="dashboard-trail-name">尚未選擇</strong>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">平均耗時</span>
+            <strong id="dashboard-duration">-</strong>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">平均距離</span>
+            <strong id="dashboard-distance">-</strong>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <canvas id="monthly-chart" aria-label="一到十二月登山紀錄分布圖"></canvas>
+        </div>
       </section>
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/dashboard.js"></script>
     <script src="js/map.js"></script>
     <script src="js/app.js"></script>
   </body>

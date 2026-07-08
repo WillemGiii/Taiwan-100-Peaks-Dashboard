@@ -57,7 +57,7 @@ p {
 }
 
 .map-section,
-.info-section {
+.dashboard-section {
   margin-top: 24px;
 }
 
@@ -74,17 +74,16 @@ p {
   font-size: 14px;
 }
 
+.status-error {
+  color: #b42318;
+}
+
 #map {
   width: 100%;
   height: min(68vh, 680px);
   min-height: 480px;
   border: 1px solid #d6e0da;
   border-radius: 8px;
-}
-
-.info-section {
-  padding: 20px 0;
-  color: #40564b;
 }
 
 .leaflet-popup-content {
@@ -118,6 +117,47 @@ p {
   color: #557064;
 }
 
+.dashboard-section {
+  padding-bottom: 32px;
+}
+
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-item {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #d6e0da;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.summary-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #557064;
+  font-size: 13px;
+}
+
+.summary-item strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 18px;
+}
+
+.chart-panel {
+  position: relative;
+  height: 360px;
+  padding: 16px;
+  border: 1px solid #d6e0da;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
 @media (max-width: 720px) {
   .app-shell {
     width: min(100% - 32px, 1180px);
@@ -139,5 +179,13 @@ p {
   #map {
     height: 64vh;
     min-height: 420px;
+  }
+
+  .dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-panel {
+    height: 320px;
   }
 }

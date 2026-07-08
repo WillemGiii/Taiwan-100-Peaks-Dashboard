@@ -1,2 +1,4 @@
-console.info("Taiwan 100 Peaks Dashboard frontend placeholder loaded.");
+document.addEventListener("DOMContentLoaded", () => {
+  initTaiwanMap("map");
+});
 

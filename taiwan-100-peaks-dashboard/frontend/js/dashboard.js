@@ -118,7 +118,14 @@ async function loadDashboard(apiBaseUrl, mountainId) {
   updateDashboardStatus("載入山岳統計資料中...");
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/mountains/${mountainId}/dashboard`);
+    const parsedMountainId = Number(mountainId);
+    if (!Number.isInteger(parsedMountainId)) {
+      throw new Error(`Invalid mountain id: ${mountainId}`);
+    }
+
+    const response = await fetch(
+      `${apiBaseUrl}/api/mountains/${parsedMountainId}/dashboard`
+    );
     if (!response.ok) {
       throw new Error(`儀表板資料載入失敗 (${response.status})`);
     }

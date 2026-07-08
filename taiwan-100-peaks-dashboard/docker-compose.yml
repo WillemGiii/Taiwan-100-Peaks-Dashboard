@@ -29,6 +29,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-taiwan_peaks}:${POSTGRES_PASSWORD:-taiwan_peaks_password}@db:5432/${POSTGRES_DB:-taiwan_100_peaks}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      CORS_ORIGIN_REGEX: ${CORS_ORIGIN_REGEX:-}
     depends_on:
       db:
         condition: service_healthy

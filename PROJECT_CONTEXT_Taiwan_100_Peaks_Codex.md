@@ -1,57 +1,87 @@
-# Taiwan 100 Peaks One-Day Hike Dashboard
+# Taiwan 100 Peaks One-Day Hike Dashboard - Codex Context
 
-## 0. 文件用途
+## 0. Purpose of This File
 
-本文件提供給 Codex 或其他 AI Coding Agent 作為專案上下文資訊文件使用。
+This file is the instruction context for Codex or any AI Coding Agent working on this project.
 
-AI 在協助開發本專案時，應優先遵守本文件描述的：
+Codex must follow this file before modifying code. The goal is to keep the MVP small, stable, traceable, and aligned with the existing project direction.
 
-- 專案目標
-- MVP 範圍
-- 技術堆疊
-- 系統架構
-- 資料庫設計
-- API 需求
-- 開發順序
-- 不應主動實作的功能
-- Git 與 Docker 開發規範
+Codex must follow:
 
-除非使用者明確要求，請不要自行擴充超出 MVP 的功能。
+- MVP scope
+- database schema
+- API contract
+- existing crawler status
+- uv dependency management rules
+- Git workflow
+- Docker development direction
+- features that should not be implemented unless explicitly requested
 
----
-
-## 1. 專案一句話目標
-
-讓想挑戰臺灣百岳單攻的人，能透過地圖快速比較各山岳的單攻難度、熱門月份與平均耗時，作為行前規劃參考。
+Do not replace the technology stack unless the user explicitly asks.
 
 ---
 
-## 2. 專案概述
+## 1. Project Goal
 
-### 2.1 專案名稱
+Build a small MVP web application for Taiwan 100 Peaks one-day hike planning.
 
-臺灣百岳單攻視覺化地圖  
-Taiwan 100 Peaks One-Day Hike Dashboard
+Users should be able to:
 
-### 2.2 核心目標
+1. Open a web page and see a Taiwan map.
+2. Click a mountain marker.
+3. See basic mountain/trail information.
+4. See dashboard statistics calculated from HikingNote public hiking records.
 
-透過地圖視覺化，提供可單攻百岳的難度評估與歷史登山紀錄分析。
+Dashboard statistics include:
 
-MVP 階段的核心體驗是：
-
-1. 使用者打開網站後，可以看到臺灣地圖。
-2. 地圖上會標示至少 5 座可單攻百岳。
-3. 使用者點擊山岳 Marker 後，可以看到該山的基本資訊與統計資料。
-4. 統計資料至少包含：
-   - 平均耗時
-   - 一到十二月登山比例
-   - 距離
-   - 海拔
-   - 海拔落差
+- average duration
+- average distance
+- average ascent
+- average descent
+- monthly record distribution
 
 ---
 
-## 3. 技術堆疊
+## 2. Current Important Status
+
+The crawler is already written by the user.
+
+Existing crawler file:
+
+```text
+crawler/hiking_note_scraper.py
+```
+
+The crawler already includes:
+
+- HikingNote AJAX request logic
+- BeautifulSoup parsing
+- distance parsing
+- duration parsing and conversion to minutes
+- ascent parsing
+- descent parsing
+- record date parsing
+- multiple trail support
+- pagination support
+
+Codex must not rewrite the crawler core logic unless explicitly requested.
+
+Allowed crawler-related tasks:
+
+1. Move crawler into project structure.
+2. Manage crawler dependencies with uv.
+3. Replace hard-coded cookies with `.env` or environment variables.
+4. Add database loading logic only when explicitly requested.
+5. Add minimal tests only when explicitly requested.
+
+Security rule:
+
+- Do not commit real cookies, session values, tokens, API keys, or passwords.
+- `.env.example` can contain variable names only, not real values.
+
+---
+
+## 3. Technology Stack
 
 ### 3.1 Frontend
 
@@ -61,76 +91,65 @@ MVP 階段的核心體驗是：
 - Leaflet.js
 - Chart.js
 
-用途：
-
-- Leaflet.js：顯示臺灣地圖與山岳 Marker
-- Chart.js：顯示儀表板圖表，例如月份分布圖
-
 ### 3.2 Backend
 
 - Python
 - FastAPI
-
-用途：
-
-- 提供 RESTful API
-- 回傳山岳資料
-- 回傳特定山岳的統計資料
-- 與 PostgreSQL 資料庫連線
+- SQLAlchemy
+- Alembic
 
 ### 3.3 Database
 
 - PostgreSQL
+- Encoding: UTF-8
+- Timezone: Asia/Taipei
 
-用途：
+### 3.4 Data Source
 
-- 儲存山岳基本資料
-- 儲存 HikingNote 公開登山紀錄資料
-- 提供後端 API 查詢與聚合統計
+- HikingNote public hiking records
+- Source website: https://hiking.biji.co/trail
 
-### 3.4 Crawler and Data Processing
+### 3.5 Python Dependency Management
 
-- Python
-- Requests
-- BeautifulSoup
-- Pandas
+Use `uv` strictly.
 
-用途：
+Rules:
 
-- 蒐集 HikingNote 公開登山紀錄
-- 整理登山日期、登山距離、登山總耗時等欄位
-- 清洗資料格式
-- 寫入 PostgreSQL
-
-MVP 階段爬蟲可以先採手動執行，不一定要加入自動排程。
+1. `backend` must have its own `pyproject.toml` and `uv.lock`.
+2. `crawler` must have its own `pyproject.toml` and `uv.lock`.
+3. Do not use global `pip install`.
+4. Do not commit `.venv/`.
+5. Add dependencies with `uv add`.
+6. Run Python scripts with `uv run`.
+7. If dependencies change, commit both `pyproject.toml` and `uv.lock`.
 
 ---
 
-## 4. Docker 開發環境
+## 4. Database Rules
 
-本專案使用 Docker 建立獨立的容器式開發環境，降低環境安裝差異，確保前端、後端、資料庫與資料處理流程可以被穩定重現。
+Use PostgreSQL with UTF-8 encoding.
 
-### 4.1 建議使用 Docker Compose 管理服務
+Chinese text fields must be stored directly as `VARCHAR` or `TEXT`.
 
-建議服務如下：
+Fields such as the following must keep Chinese values directly:
 
-| Service | 說明 |
-| --- | --- |
-| frontend | 前端地圖與儀表板介面 |
-| backend | FastAPI API 服務 |
-| db | PostgreSQL 資料庫 |
-| crawler | 登山紀錄爬蟲與資料清洗程式 |
+- `ch_mt_name`
+- `ch_trail_name`
+- `country_raw`
 
-### 4.2 MVP 階段 Docker 驗收條件
+Do not convert Chinese mountain names or administrative regions into English-only values before storing them.
 
-MVP 階段至少需完成：
+`country_raw` should preserve the original Chinese text, for example:
 
-1. 可以使用 Docker Compose 一次啟動前端、後端與資料庫。
-2. 後端服務可以成功連線 PostgreSQL。
-3. 前端可以透過 API 取得資料並顯示在地圖上。
-4. 爬蟲程式可以在容器中執行，並將資料寫入資料庫。
+```text
+臺中市和平區,新竹縣尖石鄉
+```
 
-### 4.3 建議目錄結構
+The API may expose `country_raw` as `country`.
+
+---
+
+## 5. Recommended Project Structure
 
 ```text
 taiwan-100-peaks-dashboard/
@@ -149,220 +168,254 @@ taiwan-100-peaks-dashboard/
 │   │   ├── models.py
 │   │   ├── schemas.py
 │   │   └── routers/
-│   │       ├── peaks.py
-│   │       └── stats.py
+│   │       ├── mountains.py
+│   │       └── dashboard.py
+│   ├── alembic/
+│   ├── alembic.ini
 │   ├── pyproject.toml
 │   ├── uv.lock
-│   ├── requirements.txt
 │   └── Dockerfile
 ├── crawler/
+│   ├── hiking_note_scraper.py
 │   ├── pyproject.toml
 │   ├── uv.lock
-│   ├── crawler.py
-│   ├── transform.py
-│   ├── load.py
-│   ├── requirements.txt
 │   └── Dockerfile
 ├── db/
 │   ├── init.sql
 │   └── seed.sql
+├── docs/
 ├── docker-compose.yml
 ├── .env.example
 ├── .gitignore
-└── PROJECT_CONTEXT.md
+└── project_context.md
 ```
 
 ---
 
-## 5. 版本控制規範
+## 6. Entity-Relationship Diagram
 
-本專案使用 Git 進行版本控制，確保每個功能完成後都能留下可追蹤的開發紀錄。
-
-### 5.1 Commit 原則
-
-1. 每完成一個小功能即建立一次 commit。
-2. Commit 訊息需清楚描述本次完成內容。
-3. 若使用 AI 工具協助開發，每次要求 AI 修改程式前，需先確認目前版本已 commit。
-4. 若 AI 修改後造成錯誤，應透過 Git 回復到上一個穩定版本。
-
-### 5.2 建議 Git Tag
-
-重要階段需建立 Git tag，例如：
-
-```text
-v0.1-map-prototype
-v0.2-database-api
-v0.3-crawler-import
-v0.4-dashboard
-v1.0-mvp
-```
-
-### 5.3 建議分支
-
-```text
-main                穩定版本
-develop             整合開發版本
-feature/map         地圖功能
-feature/api         後端 API
-feature/crawler     爬蟲功能
-feature/dashboard   儀表板功能
-feature/docker      容器化環境
-```
-
----
-
-## 6. 資料庫設計
-
-本專案以 PostgreSQL 作為資料庫。
-
-MVP 階段建議至少建立兩張資料表：
-
-1. `mountains`
-2. `hike_records`
-
----
-
-### 6.1 `mountains`
-
-此資料表儲存百岳基本資料。每一列代表一座山岳。
-
-| 欄位名稱 | 資料型態 | 說明 |
-| --- | --- | --- |
-| `mountain_id` | SERIAL PRIMARY KEY | 山岳唯一識別碼 |
-| `peak_name` | VARCHAR(100) NOT NULL UNIQUE | 百岳名稱，例如：玉山主峰 |
-| `latitude` | NUMERIC(10, 7) NOT NULL | 緯度 |
-| `longitude` | NUMERIC(10, 7) NOT NULL | 經度 |
-| `elevation_m` | INTEGER | 海拔高度，單位：公尺 |
-| `elevation_diff_m` | INTEGER | 海拔落差，單位：公尺 |
-| `distance_km` | NUMERIC(6, 2) | 常見單攻路線距離，單位：公里 |
-| `image_url` | TEXT | 山岳代表圖片 URL，可先為空 |
-| `description` | TEXT | 山岳簡介，可先為空 |
-
----
-
-### 6.2 `hike_records`
-
-此資料表儲存爬蟲抓取到的登山紀錄。每一列代表一筆獨立登山紀錄。
-
-| 欄位名稱 | 資料型態 | 說明 |
-| --- | --- | --- |
-| `record_id` | SERIAL PRIMARY KEY | 紀錄唯一識別碼 |
-| `mountain_id` | INTEGER REFERENCES mountains(mountain_id) | 對應的山岳 ID |
-| `peak_name` | VARCHAR(100) NOT NULL | 百岳名稱，保留文字欄位方便比對與除錯 |
-| `hike_date` | DATE | 登山日期 |
-| `distance_km` | NUMERIC(6, 2) | 總水平距離，單位：公里 |
-| `duration_mins` | INTEGER | 總耗時，單位：分鐘 |
-| `elevation_diff_m` | INTEGER | 海拔落差，單位：公尺 |
-| `source_url` | TEXT | 原始登山紀錄網址 |
-| `created_at` | TIMESTAMP DEFAULT CURRENT_TIMESTAMP | 資料建立時間 |
-
----
-
-### 6.3 MVP 測試資料要求
-
-MVP 階段資料量至少需符合以下其中一項：
-
-1. PostgreSQL 中至少儲存 100 筆登山紀錄資料。
-2. 每座 MVP 山岳至少有 10 筆登山紀錄資料。
-
----
-
-## 7. 系統架構與資料流
+PK means Primary Key. FK means Foreign Key.
 
 ```mermaid
-sequenceDiagram
-    participant User as 網頁使用者
-    participant UI as 前端 Leaflet/JavaScript
-    participant API as 後端 FastAPI
-    participant DB as PostgreSQL
-    participant Scraper as 爬蟲程式 Python
+erDiagram
+    mountains ||--o{ hiking_records : "trail_name"
 
-    Scraper->>DB: 1. 爬取 HikingNote 公開登山紀錄並寫入資料表
-    User->>UI: 2. 載入網頁
-    UI->>API: 3. GET /api/peaks
-    API-->>UI: 4. 回傳 JSON：山名、經度、緯度、基本資料
-    UI->>UI: 5. 使用 Leaflet 渲染地圖 Marker
-    User->>UI: 6. 點擊特定百岳 Marker
-    UI->>API: 7. GET /api/stats/{peak_name}
-    API->>DB: 8. 執行 SQL 聚合查詢
-    DB-->>API: 9. 回傳統計數據
-    API-->>UI: 10. 回傳儀表板 JSON
-    UI->>User: 11. 渲染儀表板
+    mountains {
+        integer hiking_note_id PK
+        varchar ch_mt_name
+        varchar ch_trail_name
+        numeric longitude_wgs84
+        numeric latitude_wgs84
+        varchar trail_name UK
+        numeric length_km
+        integer elevation_min_m
+        integer elevation_max_m
+        integer elevation_diff_m
+        text country_raw
+    }
+
+    hiking_records {
+        integer id PK
+        varchar trail_name FK
+        numeric distance_km
+        integer ascent_m
+        integer descent_m
+        integer duration_minutes
+        date record_date
+        timestamptz created_at
+        timestamptz updated_at
+    }
 ```
 
 ---
 
-## 8. API 設計
+## 7. Database Schema
 
-### 8.1 `GET /api/peaks`
+### 7.1 Table: `mountains`
 
-取得 MVP 階段所有可顯示於地圖上的山岳資料。
+Purpose:
 
-#### Response 範例
+Stores mountain and trail metadata for MVP map markers and API responses.
+
+| Column | Type | Constraint | Description |
+| --- | --- | --- | --- |
+| `hiking_note_id` | INTEGER | PRIMARY KEY | HikingNote trail ID |
+| `ch_mt_name` | VARCHAR(100) | NOT NULL | Chinese mountain group/name |
+| `ch_trail_name` | VARCHAR(150) | NOT NULL | Chinese trail name |
+| `longitude_wgs84` | NUMERIC(10, 7) |  | WGS84 longitude |
+| `latitude_wgs84` | NUMERIC(10, 7) |  | WGS84 latitude |
+| `trail_name` | VARCHAR(100) | NOT NULL UNIQUE | English trail key used by crawler and FK |
+| `length_km` | NUMERIC(6, 2) | NOT NULL | Route length in kilometers |
+| `elevation_min_m` | INTEGER |  | Minimum elevation in meters |
+| `elevation_max_m` | INTEGER |  | Maximum elevation in meters |
+| `elevation_diff_m` | INTEGER |  | Elevation difference in meters |
+| `country_raw` | TEXT |  | Raw Chinese administrative region text |
+
+SQL reference:
+
+```sql
+CREATE TABLE mountains (
+    hiking_note_id INTEGER PRIMARY KEY,
+    ch_mt_name VARCHAR(100) NOT NULL,
+    ch_trail_name VARCHAR(150) NOT NULL,
+    longitude_wgs84 NUMERIC(10, 7),
+    latitude_wgs84 NUMERIC(10, 7),
+    trail_name VARCHAR(100) NOT NULL UNIQUE,
+    length_km NUMERIC(6, 2) NOT NULL,
+    elevation_min_m INTEGER,
+    elevation_max_m INTEGER,
+    elevation_diff_m INTEGER,
+    country_raw TEXT
+);
+```
+
+### 7.2 Table: `hiking_records`
+
+Purpose:
+
+Stores HikingNote public hiking records. Each row represents one hiking record.
+
+| Column | Type | Constraint | Description |
+| --- | --- | --- | --- |
+| `id` | INTEGER | PRIMARY KEY | Hiking record ID |
+| `trail_name` | VARCHAR(100) | NOT NULL, FK | References `mountains.trail_name` |
+| `distance_km` | NUMERIC(6, 2) |  | Distance in kilometers |
+| `ascent_m` | INTEGER |  | Ascent in meters |
+| `descent_m` | INTEGER |  | Descent in meters |
+| `duration_minutes` | INTEGER |  | Duration in minutes |
+| `record_date` | DATE |  | Hiking record date |
+| `created_at` | TIMESTAMPTZ |  | Created timestamp |
+| `updated_at` | TIMESTAMPTZ |  | Updated timestamp |
+
+SQL reference:
+
+```sql
+CREATE TABLE hiking_records (
+    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    trail_name VARCHAR(100) NOT NULL REFERENCES mountains(trail_name),
+    distance_km NUMERIC(6, 2),
+    ascent_m INTEGER,
+    descent_m INTEGER,
+    duration_minutes INTEGER,
+    record_date DATE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 8. Seed Data
+
+### 8.1 `mountains` seed data
+
+| ch_mt_name | ch_trail_name | longitude_wgs84 | latitude_wgs84 | hiking_note_id | trail_name | length_km | elevation_min_m | elevation_max_m | country_raw | elevation_diff_m |
+| --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | ---: |
+| 武陵四秀 | 桃山步道 | 121.30463 | 24.43251 | 429 | tao_mountain | 7.9 | 1883 | 3325 | 臺中市和平區,新竹縣尖石鄉 | 1442 |
+| 武陵四秀 | 桃山喀拉業 | 121.3213877 | 24.45003069 | 1746 | tao_kalaye | 9 | 1860 | 3325 | 臺中市和平區,新竹縣尖石鄉,宜蘭縣大同鄉 | 1465 |
+| 武陵四秀 | 武陵二秀(池有,品田) | 121.2668 | 24.4282 | 1737 | chiyou_pintian | 10.1 | 1860 | 3524 | 臺中市和平區,新竹縣尖石鄉 | 1664 |
+| 北大武山 | 北大武山步道 | 120.7613 | 22.62706 | 1750 | mt_beidawu | 12 | 1550 | 3090 | 屏東縣瑪家鄉,屏東縣泰武鄉,臺東縣金峰鄉 | 1540 |
+| 塔關山 | 塔關山登山步道 | 120.94119 | 23.2519 | 1761 | mt_taguan | 2.2 | 2580 | 3222 | 高雄市桃源區,臺東縣海端鄉 | 642 |
+| 志佳陽大山 | 志佳陽大山登山步道 | 121.25136 | 24.357793 | 531 | mt_hijiayang | 8.3 | 1585 | 3345 | 臺中市和平區 | 1760 |
+| 郡大山 | 郡大望鄉登山步道 | 120.96249 | 23.57739 | 500 | mt_junda | 3.7 | 2865 | 3265 | 南投縣信義鄉 | 400 |
+| 雪山東峰 | 雪山東峰登山山徑 | 121.272073 | 24.388687 | 1734 | mt_xue_east | 5 | 2140 | 3201 | 臺中市和平區 | 1061 |
+| 關山嶺山 | 關山嶺山登山步道 | 120.95943 | 23.27093 | 1760 | mt_guanshangling | 1.5 | 2733 | 3176 | 高雄市桃源區,臺東縣海端鄉 | 443 |
+| 合歡山 | 合歡北峰步道 | 121.28167 | 24.18152 | 288 | hehuan_north | 2 | 2975 | 3422 | 南投縣仁愛鄉,花蓮縣秀林鄉 | 447 |
+| 合歡山 | 合歡北西步道 | 121.2446 | 24.1777 | 536 | hehuan_north_west | 6.7 | 2975 | 3422 | 南投縣仁愛鄉,花蓮縣秀林鄉 | 447 |
+| 玉山 | 玉山前峰登山山徑 | 120.91765 | 23.4756 | 68 | mt_jade_front | 3.5 | 2610 | 3239 | 南投縣信義鄉,嘉義縣阿里山鄉 | 629 |
+
+### 8.2 `hiking_records` sample data
+
+| id | trail_name | distance_km | ascent_m | descent_m | duration_minutes | record_date | created_at | updated_at |
+| --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |
+| Example | hehuan_north | 14.69 | 1380 | 1380 | 592 | 2025-10-11 |  |  |
+
+---
+
+## 9. API Contract Related to Database
+
+### 9.1 `GET /api/mountains`
+
+Returns all mountains.
+
+Expected response:
 
 ```json
 [
   {
-    "peak_name": "玉山主峰",
-    "latitude": 23.4700,
-    "longitude": 120.9573,
-    "elevation_m": 3952,
-    "elevation_diff_m": 1350,
-    "distance_km": 21.8,
-    "image_url": null
+    "hiking_note_id": 429,
+    "ch_mt_name": "武陵四秀",
+    "ch_trail_name": "桃山步道",
+    "trail_name": "tao_mountain",
+    "latitude": 24.43251,
+    "longitude": 121.30463,
+    "length_km": 7.9,
+    "elevation": 1442,
+    "elevation_min_m": 1883,
+    "elevation_max_m": 3325,
+    "country": "臺中市和平區,新竹縣尖石鄉"
   }
 ]
 ```
 
----
+Mapping:
 
-### 8.2 `GET /api/stats/{peak_name}`
+| API Field | Database Field |
+| --- | --- |
+| `hiking_note_id` | `mountains.hiking_note_id` |
+| `ch_mt_name` | `mountains.ch_mt_name` |
+| `ch_trail_name` | `mountains.ch_trail_name` |
+| `trail_name` | `mountains.trail_name` |
+| `latitude` | `mountains.latitude_wgs84` |
+| `longitude` | `mountains.longitude_wgs84` |
+| `length_km` | `mountains.length_km` |
+| `elevation` | `mountains.elevation_diff_m` |
+| `elevation_min_m` | `mountains.elevation_min_m` |
+| `elevation_max_m` | `mountains.elevation_max_m` |
+| `country` | `mountains.country_raw` |
 
-取得指定山岳的統計資料。
+### 9.2 `GET /api/mountains/{mountain_id}/dashboard`
 
-#### Response 範例
+Returns dashboard statistics for a selected mountain.
+
+Path parameter:
+
+| Parameter | Meaning |
+| --- | --- |
+| `mountain_id` | Maps to `mountains.hiking_note_id` |
+
+Expected response:
 
 ```json
 {
-  "peak_name": "玉山主峰",
-  "record_count": 25,
-  "average_duration_mins": 720,
-  "average_duration_text": "12 小時 0 分",
-  "distance_km": 21.8,
-  "elevation_m": 3952,
-  "elevation_diff_m": 1350,
+  "mountain_id": 288,
+  "mountain_name": "合歡北峰步道",
+  "trail_name": "hehuan_north",
+  "average_duration_minutes": 480,
+  "average_distance_km": 10.8,
+  "average_ascent_m": 1300,
+  "average_descent_m": 1300,
   "monthly_distribution": [
-    { "month": 1, "count": 1, "percentage": 4.0 },
-    { "month": 2, "count": 0, "percentage": 0.0 },
-    { "month": 3, "count": 2, "percentage": 8.0 },
-    { "month": 4, "count": 3, "percentage": 12.0 },
-    { "month": 5, "count": 4, "percentage": 16.0 },
-    { "month": 6, "count": 3, "percentage": 12.0 },
-    { "month": 7, "count": 5, "percentage": 20.0 },
-    { "month": 8, "count": 4, "percentage": 16.0 },
-    { "month": 9, "count": 2, "percentage": 8.0 },
-    { "month": 10, "count": 1, "percentage": 4.0 },
-    { "month": 11, "count": 0, "percentage": 0.0 },
-    { "month": 12, "count": 0, "percentage": 0.0 }
+    {
+      "month": 1,
+      "count": 12
+    }
   ],
   "data_status": "ok"
 }
 ```
 
----
-
-### 8.3 資料不足時的 Response
-
-若該山岳資料不足，前端不應出現錯誤，而是顯示提示文字。
-
-#### Response 範例
+Insufficient data response:
 
 ```json
 {
-  "peak_name": "某百岳",
-  "record_count": 0,
-  "average_duration_mins": null,
-  "average_duration_text": "資料不足",
+  "mountain_id": 288,
+  "mountain_name": "合歡北峰步道",
+  "trail_name": "hehuan_north",
+  "average_duration_minutes": null,
+  "average_distance_km": null,
+  "average_ascent_m": null,
+  "average_descent_m": null,
   "monthly_distribution": [],
   "data_status": "insufficient_data",
   "message": "目前此山岳登山紀錄不足，暫時無法產生可靠統計。"
@@ -371,348 +424,185 @@ sequenceDiagram
 
 ---
 
-## 9. 儀表板統計邏輯
+## 10. Dashboard Calculation Rules
 
-後端 API 在處理儀表板數據時，需將 `hike_records` 的資料列進行聚合運算。
+Dashboard statistics must be calculated from database records.
 
-### 9.1 平均耗時
+Do not hard-code dashboard values.
 
-針對特定 `peak_name`，計算所有紀錄耗時的算術平均數。
-
-```text
-Avg Duration = sum(duration_mins) / N
-```
-
-其中：
-
-- `N` 為該山岳的總紀錄筆數。
-- `duration_mins` 單位為分鐘。
-- 若 `N = 0`，不可除以 0，需回傳資料不足狀態。
-
-### 9.2 一到十二月登山比例
-
-提取 `hike_date` 的月份，計算各月份紀錄數佔該山岳總紀錄數的百分比。
+### 10.1 Average Duration
 
 ```text
-Monthly Percentage = count(records in month) / total records of peak * 100
+average_duration_minutes = AVG(hiking_records.duration_minutes)
 ```
 
-### 9.3 月份輸出規則
+### 10.2 Average Distance
 
-API 應盡量回傳 1 到 12 月完整資料。
-
-即使某月份沒有紀錄，也應回傳：
-
-```json
-{
-  "month": 1,
-  "count": 0,
-  "percentage": 0
-}
+```text
+average_distance_km = AVG(hiking_records.distance_km)
 ```
 
-這樣前端 Chart.js 較容易穩定渲染圖表。
+### 10.3 Average Ascent
+
+```text
+average_ascent_m = AVG(hiking_records.ascent_m)
+```
+
+### 10.4 Average Descent
+
+```text
+average_descent_m = AVG(hiking_records.descent_m)
+```
+
+### 10.5 Monthly Distribution
+
+```text
+monthly_distribution = COUNT(*) GROUP BY EXTRACT(MONTH FROM record_date)
+```
+
+Recommended output:
+
+- Return months 1 through 12.
+- If a month has no records, return count 0.
+- If a mountain has no records, return `data_status = "insufficient_data"`.
 
 ---
 
-## 10. MVP 核心功能
+## 11. Acceptance Criteria
 
-MVP 需要完成以下功能：
+### 11.1 Database
 
-1. 使用 Leaflet 顯示臺灣地圖。
-2. 地圖上至少顯示 5 座可單攻百岳。
-3. 山岳座標可以在 MVP 階段先手動建立。
-4. 每座山岳 Marker 可以被點擊。
-5. 點擊 Marker 後，顯示該山的基本資訊與統計資料。
-6. 後端 API 可以查詢 PostgreSQL 並回傳資料。
-7. PostgreSQL 中有足夠測試資料。
-8. 系統可以根據資料庫紀錄計算平均耗時與月份比例。
-9. 若資料不足，系統需顯示提示文字，而不是出現錯誤。
+- Create SQLAlchemy models for `mountains` and `hiking_records`.
+- Create Alembic migration files.
+- Ensure all foreign keys and constraints are correctly implemented.
+- `mountains.trail_name` must be unique.
+- `hiking_records.trail_name` must reference `mountains.trail_name`.
+- Chinese fields such as `ch_mt_name`, `ch_trail_name`, and `country_raw` must be stored directly as `VARCHAR` or `TEXT`.
+- PostgreSQL must use UTF-8 encoding.
+- Timezone must follow Asia/Taipei.
 
----
+### 11.2 Seed Data
 
-## 11. MVP 不包含的功能
+- Add sample mountain records from this file.
+- Add sample hiking records for testing dashboard calculations.
+- Include at least one sample record for `hehuan_north`.
 
-以下功能不列入 MVP 第一版。除非使用者明確要求，AI 不應主動實作：
+### 11.3 API
 
-1. 使用者登入與會員系統
-2. 使用者收藏山岳
-3. 路線導航與即時定位
-4. GPX 軌跡播放
-5. 天氣預報串接
-6. 離線地圖
-7. 手機 App
-8. 後台管理系統
-9. 自動排程爬蟲
-10. 所有百岳完整資料
-11. 難度評分模型
-12. 推薦路線演算法
+- `GET /api/mountains` must return all mountain records.
+- `GET /api/mountains/{mountain_id}/dashboard` must calculate statistics from database records.
+- Dashboard statistics must not be hard-coded.
+- Insufficient data must not crash the API or frontend.
 
 ---
 
-## 12. 第一版開發順序
+## 12. Development Workflow for Codex
 
-### Phase 1：靜態地圖原型
+Before modifying code:
 
-目標：先讓使用者看得到地圖與 Marker。
+1. Check `git status`.
+2. Confirm the current working tree is clean.
+3. Confirm the task is within MVP scope.
+4. Confirm the task only changes one small feature.
+5. Do not rewrite existing crawler logic unless explicitly requested.
 
-工作項目：
+When modifying code:
 
-1. 建立 Leaflet 地圖。
-2. 手動建立 5 座山岳 JSON 資料。
-3. 顯示 Marker。
-4. 點擊 Marker 顯示基本資訊。
+1. Make the smallest viable change.
+2. Do not refactor unrelated files.
+3. Do not add non-MVP features.
+4. Do not hard-code secrets.
+5. Use `.env` or Docker Compose environment variables for configuration.
+6. If schema changes, create or update Alembic migration files.
+7. If API response changes, check frontend usage.
+8. If dependencies change, commit `pyproject.toml` and `uv.lock`.
 
-完成後建議建立 Git tag：
+After modifying code:
+
+1. Report changed files.
+2. Report whether migration was created or updated.
+3. Report whether dependencies changed.
+4. Suggest a Git commit message.
+5. Suggest test or verification commands.
+
+---
+
+## 13. Git Workflow
+
+### 13.1 Branches
 
 ```text
+main                stable version
+develop             integration branch
+feature/project-init
+feature/database
+feature/api
+feature/dashboard
+feature/docker
+```
+
+### 13.2 Tags
+
+```text
+v0.0-project-init
 v0.1-map-prototype
-```
-
----
-
-### Phase 2：資料庫與 API 串接
-
-目標：讓地圖資料改由後端 API 與資料庫提供。
-
-工作項目：
-
-1. 建立 PostgreSQL。
-2. 建立 `mountains` 與 `hike_records` 資料表。
-3. 匯入山岳資料與測試紀錄。
-4. 建立 FastAPI 專案。
-5. 建立 `GET /api/peaks`。
-6. 建立 `GET /api/stats/{peak_name}`。
-7. 確認前端可透過 API 取得資料。
-
-完成後建議建立 Git tag：
-
-```text
 v0.2-database-api
-```
-
----
-
-### Phase 3：爬蟲與資料整理
-
-目標：能將 HikingNote 公開登山紀錄整理後寫入 PostgreSQL。
-
-工作項目：
-
-1. 撰寫爬蟲取得公開登山紀錄。
-2. 清洗登山日期欄位。
-3. 清洗距離欄位。
-4. 清洗耗時欄位，轉換為分鐘。
-5. 寫入 PostgreSQL。
-6. 處理資料缺漏與格式不一致問題。
-7. 爬蟲可先手動執行，不需排程。
-
-注意事項：
-
-- 爬蟲需尊重網站規範。
-- 不應高頻率請求網站。
-- 若頁面格式變動，需讓錯誤訊息容易追蹤。
-- 原始資料與清洗後資料的轉換邏輯應盡量保留在程式註解或文件中。
-
-完成後建議建立 Git tag：
-
-```text
 v0.3-crawler-import
-```
-
----
-
-### Phase 4：儀表板整合
-
-目標：點擊山岳 Marker 後顯示統計儀表板。
-
-工作項目：
-
-1. 點擊 Marker 後呼叫 `GET /api/stats/{peak_name}`。
-2. 顯示平均耗時。
-3. 顯示月份比例圖。
-4. 顯示距離、海拔與海拔落差。
-5. 顯示山岳代表圖片。
-6. 若資料不足，顯示提示文字。
-7. 確保畫面資訊清楚、可讀、可操作。
-
-完成後建議建立 Git tag：
-
-```text
 v0.4-dashboard
-```
-
----
-
-### Phase 5：MVP 收斂與驗收
-
-目標：完成一個可展示、可操作、可繼續擴充的 MVP。
-
-工作項目：
-
-1. 使用 Docker Compose 啟動完整服務。
-2. 確認前端、後端、資料庫可以互通。
-3. 確認至少 5 座山岳可以顯示。
-4. 確認至少 100 筆登山紀錄或每座山岳至少 10 筆資料。
-5. 確認統計資料可正常顯示。
-6. 確認資料不足時不會造成畫面錯誤。
-7. 補上 README 的啟動說明。
-
-完成後建議建立 Git tag：
-
-```text
 v1.0-mvp
 ```
 
----
-
-## 13. MVP 驗收標準
-
-MVP 完成時，需符合以下條件：
-
-1. 使用者可以打開網站並看到臺灣地圖。
-2. 地圖上至少顯示 5 座可單攻百岳。
-3. 每座山岳 Marker 可以被點擊。
-4. 點擊 Marker 後，可以顯示該山的基本資訊與統計資料。
-5. PostgreSQL 中至少儲存 100 筆登山紀錄資料，或每座 MVP 山岳至少 10 筆資料。
-6. 系統可以根據資料庫紀錄計算平均耗時與月份比例。
-7. 畫面不需精美，但資訊需清楚、可讀、可操作。
-8. 若資料不足，系統需顯示提示文字，而不是出現錯誤。
-
----
-
-## 14. 成功指標
-
-MVP 成功不以功能多寡判斷，而是以下列條件判斷：
-
-1. 使用者能在 30 秒內理解這個網站的用途。
-2. 使用者能透過點擊地圖查看山岳統計資訊。
-3. 使用者能回答：「這座山大約要走多久？哪幾個月份較多人爬？」
-4. 開發者能根據 MVP 結果決定下一版是否加入 GPX、天氣、難度評分或使用者收藏功能。
-
----
-
-## 15. 給 Codex 的開發守則
-
-### 15.1 修改程式前
-
-在修改程式前，請先確認：
-
-1. 目前工作樹是否乾淨。
-2. 目前是否已有 Git commit。
-3. 本次修改是否符合 MVP 範圍。
-4. 本次修改是否只處理一個明確的小功能。
-
-### 15.2 修改程式時
-
-請遵守：
-
-1. 優先做最小可行修改。
-2. 不要一次重構過多檔案。
-3. 不要主動加入 MVP 以外功能。
-4. 不要把 API key、密碼、資料庫密碼寫死在程式中。
-5. 使用 `.env` 或 Docker Compose environment 管理環境變數。
-6. 若新增資料表或欄位，需同步更新 SQL 與文件。
-7. 若新增 API，需提供 request/response 範例。
-8. 若修改前端資料格式，需同步確認後端 response 是否一致。
-
-### 15.3 修改程式後
-
-每次修改後，請協助檢查：
-
-1. Docker Compose 是否可正常啟動。
-2. Backend 是否可連線 PostgreSQL。
-3. Frontend 是否可呼叫 API。
-4. Marker 是否可正常顯示。
-5. Dashboard 是否可正常渲染。
-6. 資料不足情境是否不會報錯。
-7. 是否需要新增或更新 README 說明。
-
-### 15.4 建議 Commit Message 格式
+### 13.3 Commit Message Examples
 
 ```text
-feat: add leaflet map prototype
-feat: add peaks api
-feat: add postgres schema
-feat: add hiking record crawler
-feat: add dashboard monthly chart
+chore: initialize project structure
+chore: initialize backend uv project
+chore: manage existing crawler with uv
+feat: add sqlalchemy models
+feat: add alembic migrations
+feat: add mountain seed data
+feat: add mountains api
+feat: add mountain dashboard api
 fix: handle insufficient hiking records
-docs: update project setup guide
-chore: add docker compose services
+docs: update project context
 ```
 
 ---
 
-## 16. 建議優先建立的檔案
+## 14. Features Outside MVP
 
-若專案尚未建立，建議依序建立：
+Do not implement the following features unless explicitly requested:
 
-1. `README.md`
-2. `PROJECT_CONTEXT.md`
-3. `.gitignore`
-4. `.env.example`
-5. `docker-compose.yml`
-6. `frontend/index.html`
-7. `frontend/css/style.css`
-8. `frontend/js/app.js`
-9. `backend/requirements.txt`
-10. `backend/app/main.py`
-11. `backend/app/database.py`
-12. `backend/app/routers/peaks.py`
-13. `backend/app/routers/stats.py`
-14. `db/init.sql`
-15. `db/seed.sql`
-16. `crawler/crawler.py`
+1. User login or membership system.
+2. Favorite mountains.
+3. Route navigation.
+4. Real-time location.
+5. GPX playback.
+6. Weather API integration.
+7. Offline maps.
+8. Mobile app.
+9. Admin dashboard.
+10. Scheduled crawler.
+11. Full 100 peaks database.
+12. Difficulty scoring model.
+13. Recommendation algorithm.
 
 ---
 
-## 17. 開發優先順序摘要
+## 15. Next Recommended Development Order
 
-最優先：
+1. Preserve existing crawler.
+2. Initialize project structure.
+3. Initialize backend with uv.
+4. Initialize crawler with uv.
+5. Add SQLAlchemy models.
+6. Add Alembic migrations.
+7. Add seed data for `mountains`.
+8. Add sample `hiking_records`.
+9. Build `GET /api/mountains`.
+10. Build `GET /api/mountains/{mountain_id}/dashboard`.
+11. Connect frontend map to API.
+12. Connect dashboard UI to API.
+13. Add Docker Compose integration.
 
-1. 地圖能顯示。
-2. Marker 能點擊。
-3. API 能回資料。
-4. 資料庫能儲存資料。
-5. Dashboard 能顯示平均耗時與月份比例。
-
-暫時不要做：
-
-1. 登入系統。
-2. 收藏功能。
-3. GPX。
-4. 天氣。
-5. 手機 App。
-6. 自動排程。
-7. 完整百岳資料庫。
-
----
-
-本專案 Python 環境統一使用 uv 管理。
-
-規則如下：
-
-1. backend 與 crawler 皆需使用各自的 pyproject.toml 管理 Python dependencies。
-2. 使用 uv.lock 鎖定套件版本，確保不同開發環境可重現。
-3. 不要直接使用全域 pip install 安裝套件。
-4. 不要將 .venv/ 提交到 Git。
-5. 新增 Python 套件時，必須使用 uv add。
-6. 執行 Python 程式時，優先使用 uv run。
-7. 若修改 Python dependencies，必須同步提交 pyproject.toml 與 uv.lock。
-8. Dockerfile 或 docker-compose.yml 需依照 uv 管理方式安裝 dependencies。
-
----
-
-## 18. 最終目標
-
-本專案第一版不是要做出完整登山平台，而是要做出一個小而穩定的 MVP。
-
-使用者打開網站後，應能快速理解：
-
-- 這是一個臺灣百岳單攻規劃參考工具。
-- 可以透過地圖選擇山岳。
-- 可以看到該山大約要走多久。
-- 可以看到哪些月份較多人挑戰。
-- 可以作為下一次登山行前規劃的初步參考。
-
-開發時請優先保持功能清楚、資料流穩定、架構可擴充，而不是追求華麗畫面或過多功能。
+Keep the MVP small and stable. Do not build a full hiking platform in the first version.

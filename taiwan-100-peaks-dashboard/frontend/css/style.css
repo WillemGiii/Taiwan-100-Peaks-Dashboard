@@ -1,0 +1,28 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, "Noto Sans TC", sans-serif;
+  color: #1f2933;
+  background: #f6f8fa;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+p {
+  margin: 0;
+  line-height: 1.6;
+}
+

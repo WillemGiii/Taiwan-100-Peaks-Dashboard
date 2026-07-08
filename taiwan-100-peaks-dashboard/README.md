@@ -75,11 +75,13 @@ GET http://localhost:8000/api/mountains/288/dashboard
 Backend container 啟動時會先執行：
 
 ```text
-uv run alembic upgrade head
-uv run python scripts/seed_database.py
+uv run --no-sync alembic upgrade head
+uv run --no-sync python -m scripts.seed_database
 ```
 
 這會建立 `mountains` / `hiking_records` 資料表，並匯入 `db/seed.sql`。Seed data 會放入山岳資料與一筆 `hehuan_north` 測試登山紀錄，讓地圖 Marker 與合歡北峰 dashboard 可立即驗證。
+
+`docker compose up` 不會自動執行 HikingNote crawler，也不會自動下載真實登山紀錄。真實 `hiking_records` 需要另外手動執行 crawler 匯入，避免每次啟動服務都向 HikingNote 發送請求。
 
 ## 本機開發
 
@@ -90,7 +92,7 @@ cd backend
 uv sync
 $env:DATABASE_URL="postgresql+psycopg://taiwan_peaks:change_me_for_local_dev@localhost:5432/taiwan_100_peaks"
 uv run alembic upgrade head
-uv run python scripts/seed_database.py
+uv run python -m scripts.seed_database
 uv run uvicorn app.main:app --reload
 ```
 
@@ -101,7 +103,7 @@ cd frontend
 python -m http.server 8080
 ```
 
-瀏覽器開啟 http://localhost:8080。前端預設呼叫 `http://localhost:8000`；如需調整，可在載入 `js/app.js` 前設定 `window.API_BASE_URL`。
+瀏覽器開啟 http://localhost:8080。前端會依照目前頁面的 hostname 自動呼叫同一台主機的 `8000` port，例如從 `http://172.21.3.150:8080` 開啟時，API 會使用 `http://172.21.3.150:8000`；如需調整，可在載入 `js/app.js` 前設定 `window.API_BASE_URL`。
 
 ## 環境變數
 
@@ -113,6 +115,7 @@ POSTGRES_PASSWORD=change_me_for_local_dev
 POSTGRES_DB=taiwan_100_peaks
 DATABASE_URL=postgresql+psycopg://taiwan_peaks:change_me_for_local_dev@localhost:5432/taiwan_100_peaks
 CORS_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+CORS_ORIGIN_REGEX=^https?://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$
 HIKING_NOTE_COOKIE=name=value; another_name=another_value
 ```
 
@@ -127,6 +130,59 @@ crawler/hiking_note_scraper.py
 ```
 
 不要重寫核心爬蟲邏輯，除非任務明確要求。若爬蟲需要 Cookie，請透過 `HIKING_NOTE_COOKIE` 環境變數提供。
+
+### 匯入真實 HikingNote Records
+
+`crawler/crawler.py` 是手動匯入入口，會依序執行：
+
+```text
+scrape_all_trails()
+clean_hiking_records()
+load_hiking_records_to_postgres()
+```
+
+因此不要再另外手動執行 `data_cleaning.py` 或 `load_to_db.py`。這兩個檔案是 crawler 主流程使用的模組。
+
+伺服器環境若尚未安裝 uv，先安裝 uv：
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"
+uv --version
+```
+
+確認 Docker Compose 的 PostgreSQL 服務正在執行：
+
+```bash
+docker compose ps
+```
+
+確認專案根目錄 `.env` 已設定資料庫連線與 HikingNote Cookie placeholder。不要提交真實 Cookie：
+
+```env
+DATABASE_URL=postgresql+psycopg://taiwan_peaks:taiwan_peaks_password@localhost:5432/taiwan_100_peaks
+HIKING_NOTE_COOKIE=your_hiking_note_cookie_header
+```
+
+若你的 `.env` 裡 `POSTGRES_PASSWORD` 不同，`DATABASE_URL` 的密碼也要一致。
+
+手動執行 crawler 匯入真實 HikingNote records：
+
+```bash
+cd crawler
+uv sync
+uv run python crawler.py
+```
+
+crawler 目前會對 HikingNote request 使用 30 秒 timeout、最多 3 次 retry；若單一分頁重試後仍失敗，會略過該頁並繼續處理其他分頁，避免整批匯入中斷。
+
+匯入完成後可檢查 `hiking_records`：
+
+```bash
+cd ..
+docker compose exec db psql -U taiwan_peaks -d taiwan_100_peaks -c "SELECT COUNT(*) FROM hiking_records;"
+docker compose exec db psql -U taiwan_peaks -d taiwan_100_peaks -c "SELECT trail_name, COUNT(*) FROM hiking_records GROUP BY trail_name ORDER BY trail_name;"
+```
 
 ## Python 套件管理規則
 

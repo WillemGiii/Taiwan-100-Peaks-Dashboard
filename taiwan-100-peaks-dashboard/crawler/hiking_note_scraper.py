@@ -37,7 +37,7 @@ TRAIL_DATA: dict[str, int] = {
     "chiyou_pintian": 1737,
     "mt_beidawu": 1750,
     "mt_taguan": 1761,
-    "mt_hijiayan": 531,
+    "mt_hijiayang": 531,
     "mt_junda": 500,
     "mt_xue_east": 1734,
     "mt_guanshangling": 1760,

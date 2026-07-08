@@ -14,6 +14,7 @@
 import os
 import re
 import pprint
+import time
 from typing import Optional
 
 import requests
@@ -25,6 +26,9 @@ from bs4 import BeautifulSoup
 # ---------------------------------------------------------------------------
 
 BASE_URL: str = "https://hiking.biji.co/trail/ajax/load_related_gpx"
+REQUEST_TIMEOUT_SECONDS: int = 30
+REQUEST_MAX_RETRIES: int = 3
+REQUEST_RETRY_BACKOFF_SECONDS: int = 2
 
 # 目標山岳與其在健行筆記對應的軌跡 ID
 TRAIL_DATA: dict[str, int] = {
@@ -164,7 +168,7 @@ def fetch_page_records(
     hiking_note_id: int,
     page: int,
     trail_name: str,
-) -> list[dict[str, object]]:
+) -> list[dict[str, object]] | None:
     """向健行筆記 AJAX 端點請求指定頁碼的軌跡紀錄，並解析回傳。
 
     Args:
@@ -173,10 +177,8 @@ def fetch_page_records(
         trail_name: 對應的山岳/路線名稱（英文識別碼），用於標記資料來源。
 
     Returns:
-        該頁所有有效紀錄的字典清單；若該頁無資料或請求失敗則回傳空清單。
-
-    Raises:
-        requests.HTTPError: 當 HTTP 回應狀態碼為 4xx / 5xx 時拋出。
+        該頁所有有效紀錄的字典清單；若該頁無資料則回傳空清單。
+        若該頁請求重試後仍失敗，回傳 ``None`` 讓呼叫端略過單頁。
     """
     params: dict[str, object] = {
         "id": hiking_note_id,
@@ -184,16 +186,39 @@ def fetch_page_records(
         "device": "computer",
     }
 
-    response = requests.get(
-        BASE_URL,
-        params=params,
-        cookies=COOKIES,
-        headers=HEADERS,
-        timeout=15,
-    )
-    response.raise_for_status()
+    response: requests.Response | None = None
+    for attempt in range(1, REQUEST_MAX_RETRIES + 1):
+        try:
+            response = requests.get(
+                BASE_URL,
+                params=params,
+                cookies=COOKIES,
+                headers=HEADERS,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
+            response.raise_for_status()
+            break
+        except requests.exceptions.RequestException as exc:
+            print(
+                f"  第 {page} 頁請求失敗 "
+                f"({attempt}/{REQUEST_MAX_RETRIES}): {exc}"
+            )
+            if attempt < REQUEST_MAX_RETRIES:
+                wait_seconds = REQUEST_RETRY_BACKOFF_SECONDS * attempt
+                print(f"    {wait_seconds} 秒後重試。")
+                time.sleep(wait_seconds)
+            else:
+                print(f"  第 {page} 頁重試後仍失敗，略過此頁。")
+                return None
 
-    raw_html: str = response.json()["data"]["list"]
+    if response is None:
+        return None
+
+    try:
+        raw_html: str = response.json()["data"]["list"]
+    except (KeyError, TypeError, ValueError) as exc:
+        print(f"  第 {page} 頁回應格式無法解析，略過此頁: {exc}")
+        return None
 
     # 健行筆記回傳的是 <li> 片段，需包在 <ul> 中才能正確解析
     soup = BeautifulSoup(f"<ul>{raw_html}</ul>", "lxml")
@@ -230,6 +255,9 @@ def scrape_all_trails(
 
         for page in range(1, max_pages + 1):
             page_records = fetch_page_records(hiking_note_id, page, trail_name)
+
+            if page_records is None:
+                continue
 
             # 若該頁無資料，代表已到最後一頁，提前結束
             if not page_records:
